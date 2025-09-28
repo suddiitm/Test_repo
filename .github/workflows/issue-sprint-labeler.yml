@@ -1,0 +1,35 @@
+name: Auto Sprint Label
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  add-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set Sprint Label
+        id: set_label
+        run: |
+          # Get year and month (e.g. 2025-Sep)
+          LABEL="SRE-Sprint-$(date +'%Y-%b')"
+          echo "label=$LABEL" >> $GITHUB_ENV
+
+      - name: Create label if missing
+        uses: actions-ecosystem/action-create-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: |
+            - name: ${{ env.label }}
+              color: "0e8a16"
+
+      - name: Add sprint label to issue
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: ${{ env.label }}
+          issue_number: ${{ github.event.issue.number }}

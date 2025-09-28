@@ -1,17 +1,9 @@
 ---
-name: Test_template
-about: 'Test labels '
-title: Feature
-labels: SRE1-ChangeMgmt, SRE2-Provisioning
-assignees: suddiitm
-
----
-
----
 name: 'De-Integration for Cognos controller'
 about: De-Integration for Cognos controller  Git Issue
 title: 'De-Integration for Environment-- xxx - Client Name: <Customer Name>'
 labels: SRE1-ChangeMgmt,SRE2-Provisioning,SRE-XS-Hours
+assignees: suddiitm
 ---
 
 

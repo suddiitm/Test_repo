@@ -1,0 +1,91 @@
+name: Auto Sprint Label
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  add-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set Sprint Label and Color
+        id: set_label
+        run: |
+          # Determine current month and label
+          MONTH=$(date +'%b')
+          YEAR=$(date +'%Y')
+          LABEL="SRE-Sprint-${YEAR}-${MONTH}"
+
+          # Define color map (hex without '#')
+          declare -A COLORS=(
+            ["Jan"]="B60205"
+            ["Feb"]="D93F0B"
+            ["Mar"]="FBCA04"
+            ["Apr"]="0E8A16"
+            ["May"]="006B75"
+            ["Jun"]="1D76DB"
+            ["Jul"]="0052CC"
+            ["Aug"]="5319E7"
+            ["Sep"]="BFD4F2"
+            ["Oct"]="E99695"
+            ["Nov"]="F9D0C4"
+            ["Dec"]="C2E0C6"
+          )
+
+          COLOR="${COLORS[$MONTH]}"
+          echo "label=$LABEL" >> $GITHUB_ENV
+          echo "label_color=$COLOR" >> $GITHUB_ENV
+
+      - name: Create label if missing
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labelName = process.env.label;
+            const labelColor = process.env.label_color;
+
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: labelName
+              });
+              console.log(`✅ Label '${labelName}' already exists`);
+            } catch (error) {
+              if (error.status === 404) {
+                console.log(`🆕 Creating label '${labelName}' with color ${labelColor}`);
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: labelName,
+                  color: labelColor
+                });
+              } else {
+                throw error;
+              }
+            }
+
+      - name: Add sprint label to issue
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: ${{ env.label }}
+          issue_number: ${{ github.event.issue.number }}
+
+      - name: Comment on issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.issue.number;
+            const labelName = process.env.label;
+            const body = `🏷️ **Sprint Label Added:** \`${labelName}\`\n\nThis issue has been automatically categorized under the current sprint.`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              body
+            });
+            console.log(`💬 Comment added confirming label '${labelName}'`);
